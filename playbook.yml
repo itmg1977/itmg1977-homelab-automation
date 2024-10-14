@@ -1,0 +1,62 @@
+---
+- name: Setup pidev
+  hosts: itmg77-pi4
+  tags:
+  - lab
+  roles:
+  - role: setup-raspbee
+    become: yes
+  tasks:
+  - name: "Create user accounts"
+    become: yes
+    user:
+      name: '{{ poweruser }}'
+      groups: "sudo,docker,root,dialout"
+  - name: "Create user accounts"
+    become: yes
+    user:
+      name: ansible
+      groups: "sudo,docker,root,dialout"
+  - name: "Add authorized keys"
+    become: yes
+    authorized_key:
+      user: '{{ poweruser }}'
+      state: present
+      key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  - name: Make user {{ poweruser }} passwordless for sudo
+    become: yes
+    copy:
+      dest: /etc/sudoers.d/010_{{ poweruser }}-nopasswd
+      content: '{{ poweruser }} ALL=(ALL) NOPASSWD: ALL'
+      owner: root
+      group: root
+      mode: '0440'
+  - name: ensures /home/{{ poweruser }}/compose dir exists
+    become: yes
+    file: 
+      path: /home/{{ poweruser }}/compose
+      state: directory
+      owner: '{{ poweruser }}'
+      group: '{{ poweruser }}'
+      recurse: yes
+  - name: Send compose.yml
+    become: yes
+    template:
+      dest: /home/{{ poweruser }}/compose/docker-compose.yml
+      src: files/compose.yml.j2
+      owner: '{{ poweruser }}'
+      group: ansible
+      mode: '0440'
+  - name: Start services with docker compose
+    community.docker.docker_compose_v2:
+      project_src: /home/{{ poweruser }}/compose
+      state: present
+  - name: Obtain info
+    command:
+      argv: 
+      - cat
+      - /etc/os-release
+    when: ansible_distribution == "Debian"
+  - name: check if device exist
+    file:
+      path: /dev/ttyAMA0
