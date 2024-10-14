@@ -7,10 +7,13 @@
   - role: setup-raspbee
     become: yes
   tasks:
+  - name: Find out whoami
+    local_action: ansible.builtin.command whoami
+    register: poweruser
   - name: "Create user accounts"
     become: yes
     user:
-      name: '{{ poweruser }}'
+      name: '{{ poweruser["stdout"] }}'
       groups: "sudo,docker,root,dialout"
   - name: "Create user accounts"
     become: yes
@@ -20,36 +23,36 @@
   - name: "Add authorized keys"
     become: yes
     authorized_key:
-      user: '{{ poweruser }}'
+      user: '{{ poweruser["stdout"] }}'
       state: present
       key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
-  - name: Make user {{ poweruser }} passwordless for sudo
+  - name: Make user {{ poweruser["stdout"] }} passwordless for sudo
     become: yes
     copy:
-      dest: /etc/sudoers.d/010_{{ poweruser }}-nopasswd
-      content: '{{ poweruser }} ALL=(ALL) NOPASSWD: ALL'
+      dest: /etc/sudoers.d/010_{{ poweruser["stdout"] }}-nopasswd
+      content: '{{ poweruser["stdout"] }} ALL=(ALL) NOPASSWD: ALL'
       owner: root
       group: root
       mode: '0440'
-  - name: ensures /home/{{ poweruser }}/compose dir exists
+  - name: ensures /home/{{ poweruser["stdout"] }}/compose dir exists
     become: yes
     file: 
-      path: /home/{{ poweruser }}/compose
+      path: /home/{{ poweruser["stdout"] }}/compose
       state: directory
-      owner: '{{ poweruser }}'
-      group: '{{ poweruser }}'
+      owner: '{{ poweruser["stdout"] }}'
+      group: '{{ poweruser["stdout"] }}'
       recurse: yes
   - name: Send compose.yml
     become: yes
     template:
-      dest: /home/{{ poweruser }}/compose/docker-compose.yml
+      dest: /home/{{ poweruser["stdout"] }}/compose/docker-compose.yml
       src: files/compose.yml.j2
-      owner: '{{ poweruser }}'
+      owner: '{{ poweruser["stdout"] }}'
       group: ansible
       mode: '0440'
   - name: Start services with docker compose
     community.docker.docker_compose_v2:
-      project_src: /home/{{ poweruser }}/compose
+      project_src: /home/{{ poweruser["stdout"] }}/compose
       state: present
   - name: Obtain info
     command:
