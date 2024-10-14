@@ -1,0 +1,4 @@
+---
+- include_tasks: setup-gpio.yml
+- include_tasks: install-docker.yml
+#- include_tasks: setup-vpn.yml
