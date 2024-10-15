@@ -50,6 +50,8 @@
       owner: '{{ poweruser["stdout"] }}'
       group: ansible
       mode: '0440'
+  - name: Flush handlers
+    meta: flush_handlers
   - name: Start services with docker compose
     community.docker.docker_compose_v2:
       project_src: /home/{{ poweruser["stdout"] }}/compose
