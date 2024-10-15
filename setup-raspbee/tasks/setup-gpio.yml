@@ -1,15 +1,5 @@
 ---
 # tasks file for setup-raspbee
-# - name: Grab gpio driver
-#   get_url:
-#     dest: /tmp/wiringpi-latest.deb
-#     url: "https://project-downloads.drogon.net/wiringpi-latest.deb"
-# - name: Install gpio driver
-#   apt: 
-#     deb: "/tmp/wiringpi-latest.deb"
-# - name: Fix gpio driver
-#   apt: 
-#     state: fixed
 - name: Enable uart
   lineinfile:
     path: /boot/firmware/config.txt
@@ -24,10 +14,11 @@
     line: 'dtoverlay=disable-bt'
   notify:
   - Reboot
-- name: Disable console via serial0
-  replace:
-    path: /boot/cmdline.txt
-    regexp: 'console=serial0,'
-    replace: ''
+- name: Would you like a login shell accessible over serial? NO
+  ansible.builtin.command: raspi-config nonint do_serial_cons 1
+  notify:
+  - Reboot
+- name: Would you like the serial port hardware to be enabled? → Yes
+  ansible.builtin.command: raspi-config nonint do_serial_hw 0
   notify:
   - Reboot
